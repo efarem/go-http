@@ -15,12 +15,8 @@ const (
 	HeaderXSecret = "X-Secret"
 )
 
-func main() {
-
-	e := echo.New()
-
-	e.POST("/hello/:name", func(c echo.Context) error {
-
+func ServerHeader(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
 		d := new(Data)
 
 		if err := c.Bind(d); err != nil {
@@ -29,10 +25,24 @@ func main() {
 
 		c.Response().Header().Set(HeaderXSecret, d.Secret)
 
-		name := c.Param("name")
+		return next(c)
+	}
+}
 
-		return c.String(http.StatusOK, "<h1>Hello "+name+"</h1>\n")
-	})
+func Hello(c echo.Context) error {
+
+	name := c.Param("name")
+
+	return c.String(http.StatusOK, "<h1>Hello "+name+"</h1>\n")
+}
+
+func main() {
+
+	e := echo.New()
+
+	e.Use(ServerHeader)
+
+	e.POST("/hello/:name", Hello)
 
 	e.Logger.Fatal(e.Start(":1337"))
 }
